@@ -1,12 +1,12 @@
-# See https://help.github.com/ignore-files/ for more about ignoring files.
+# Brownie
+__pycache__
+.history
+.hypothesis/
+build/
+reports/
 
-#IDEs
+# IDEs
 /.idea
-# dependencies
-/node_modules
-
-# testing
-/coverage
 
 # misc
 .DS_Store
@@ -14,11 +14,3 @@
 .env.development.local
 .env.test.local
 .env.production.local
-
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-node_modules
-
-deploy.js
-oracle.js
