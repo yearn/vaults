@@ -2,6 +2,11 @@ import pytest
 
 
 @pytest.fixture
+def rewards(a):
+    yield a[2]
+
+
+@pytest.fixture
 def gov(a):
     yield a[3]
 
