@@ -51,6 +51,10 @@ contract StrategyYfii {
         controller = _controller;
     }
 
+    function getName() external pure returns (string memory) {
+        return "StrategyYfii";
+    }
+
     function setFee(uint _fee) external {
         require(msg.sender == governance, "!governance");
         fee = _fee;

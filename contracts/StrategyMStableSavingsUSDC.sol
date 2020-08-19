@@ -45,7 +45,7 @@ contract StrategyMStableSavingsUSDC {
     }
 
     function getName() external pure returns (string memory) {
-        return "StrategyMStableSavingsTUSD";
+        return "StrategyMStableSavingsUSDC";
     }
 
     function deposit() external {

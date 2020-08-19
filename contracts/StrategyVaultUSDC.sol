@@ -59,7 +59,7 @@ contract StrategyVaultUSDC {
         return "StrategyVaultUSDC";
     }
 
-    function debt() external view returns (uint) {
+    function debt() public view returns (uint) {
         (,uint currentBorrowBalance,,,,,,,,) = Aave(getAave()).getUserReserveData(want, Controller(controller).vaults(address(this)));
         return currentBorrowBalance;
     }

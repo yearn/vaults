@@ -1,0 +1,51 @@
+name: Test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  ETHERSCAN_TOKEN:  ${{ secrets.ETHERSCAN_TOKEN }}
+  WEB3_INFURA_PROJECT_ID: ${{ secrets.WEB3_INFURA_PROJECT_ID }}
+
+jobs:
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+
+    - name: Install black
+      run: pip install black
+
+    - name: Run Black
+      run: black .
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v1
+
+    - name: Install Ganache
+      run: npm install -g ganache-cli@6.10.1
+
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+
+    - name: Install Brownie
+      run: pip install eth-brownie
+
+    - name: Run Tests
+      run: brownie test
