@@ -52,6 +52,10 @@ contract StrategyDForceUSDC {
         controller = _controller;
     }
 
+    function getName() external pure returns (string memory) {
+        return "StrategyDForceUSDC";
+    }
+
     function setStrategist(address _strategist) external {
         require(msg.sender == governance, "!governance");
         strategist = _strategist;
