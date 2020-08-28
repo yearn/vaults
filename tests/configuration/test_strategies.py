@@ -11,6 +11,7 @@ from brownie import (
     StrategyVaultTUSD,
     StrategyVaultUSDC,
     StrategyYfii,
+    StrategyCurveYCRVVoter,
 )
 
 strategies = [
@@ -23,6 +24,7 @@ strategies = [
     StrategyVaultTUSD,
     StrategyVaultUSDC,
     StrategyYfii,
+    StrategyCurveYCRVVoter,
 ]
 
 
