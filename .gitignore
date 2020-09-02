@@ -5,6 +5,10 @@ __pycache__
 build/
 reports/
 
+# Python
+__pycache__*
+.pytest*
+
 # IDEs
 /.idea
 
@@ -14,3 +18,4 @@ reports/
 .env.development.local
 .env.test.local
 .env.production.local
+env*
