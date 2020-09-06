@@ -97,7 +97,7 @@ contract StrategyControllerV2 {
         IERC20(_token).safeTransfer(governance, _amount);
     }
 
-    function inCaseStrategyGetStruck(address _strategy, address _token) external {
+    function inCaseStrategyGetStuck(address _strategy, address _token) external {
         require(msg.sender == governance, "!governance");
         Strategy(_strategy).withdraw(_token);
         IERC20(_token).safeTransfer(governance, IERC20(_token).balanceOf(address(this)));
