@@ -3,7 +3,6 @@ import brownie
 
 from brownie import (
     StrategyCurveYCRV,
-    StrategyCurveYCRVVoter,
     StrategyDForceDAI,
     StrategyDForceUSDC,
     StrategyDForceUSDT,
@@ -12,11 +11,11 @@ from brownie import (
     StrategyVaultTUSD,
     StrategyVaultUSDC,
     StrategyYfii,
+    StrategyCurveYCRVVoter,
 )
 
 strategies = [
     StrategyCurveYCRV,
-    StrategyCurveYCRVVoter,
     StrategyDForceDAI,
     StrategyDForceUSDC,
     StrategyDForceUSDT,
@@ -25,6 +24,7 @@ strategies = [
     StrategyVaultTUSD,
     StrategyVaultUSDC,
     StrategyYfii,
+    StrategyCurveYCRVVoter,
 ]
 
 
