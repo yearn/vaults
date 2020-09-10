@@ -6,10 +6,11 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-import "../interfaces/Strategy.sol";
-import "../interfaces/Converter.sol";
-import "../interfaces/OneSplitAudit.sol";
-import "../interfaces/Vault.sol";
+import "../Strategy.sol";
+import "../Vault.sol";
+
+import "../../interfaces/Converter.sol";
+import "../../interfaces/OneSplitAudit.sol";
 
 contract StrategyControllerV2 {
     using SafeERC20 for IERC20;

@@ -6,9 +6,10 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-import "../interfaces/Controller.sol";
-import "../interfaces/DForce.sol";
-import "../interfaces/Uniswap.sol";
+import "../Controller.sol";
+
+import "../../interfaces/DForce.sol";
+import "../../interfaces/Uniswap.sol";
 
 /*
 
@@ -24,14 +25,14 @@ import "../interfaces/Uniswap.sol";
 
 */
 
-contract StrategyDForceUSDC {
+contract StrategyDForceUSDT {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
 
-    address constant public want = address(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48); // USDC
-    address constant public dusdc = address(0x16c9cF62d8daC4a38FB50Ae5fa5d51E9170F3179);
-    address constant public pool = address(0xB71dEFDd6240c45746EC58314a01dd6D833fD3b5);
+    address constant public want = address(0xdAC17F958D2ee523a2206206994597C13D831ec7);
+    address constant public d = address(0x868277d475E0e475E38EC5CdA2d9C83B5E1D9fc8);
+    address constant public pool = address(0x324EebDAa45829c6A8eE903aFBc7B61AF48538df);
     address constant public df = address(0x431ad2ff6a9C365805eBaD47Ee021148d6f7DBe0);
     address constant public uni = address(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
     address constant public weth = address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // used for df <> weth <> usdc route
@@ -53,7 +54,7 @@ contract StrategyDForceUSDC {
     }
 
     function getName() external pure returns (string memory) {
-        return "StrategyDForceUSDC";
+        return "StrategyDForceUSDT";
     }
 
     function setStrategist(address _strategist) external {
@@ -74,16 +75,16 @@ contract StrategyDForceUSDC {
     function deposit() public {
         uint _want = IERC20(want).balanceOf(address(this));
         if (_want > 0) {
-            IERC20(want).safeApprove(dusdc, 0);
-            IERC20(want).safeApprove(dusdc, _want);
-            dERC20(dusdc).mint(address(this), _want);
+            IERC20(want).safeApprove(d, 0);
+            IERC20(want).safeApprove(d, _want);
+            dERC20(d).mint(address(this), _want);
         }
 
-        uint _dusdc = IERC20(dusdc).balanceOf(address(this));
-        if (_dusdc > 0) {
-            IERC20(dusdc).safeApprove(pool, 0);
-            IERC20(dusdc).safeApprove(pool, _dusdc);
-            dRewards(pool).stake(_dusdc);
+        uint _d = IERC20(d).balanceOf(address(this));
+        if (_d > 0) {
+            IERC20(d).safeApprove(pool, 0);
+            IERC20(d).safeApprove(pool, _d);
+            dRewards(pool).stake(_d);
         }
 
     }
@@ -92,7 +93,7 @@ contract StrategyDForceUSDC {
     function withdraw(IERC20 _asset) external returns (uint balance) {
         require(msg.sender == controller, "!controller");
         require(want != address(_asset), "want");
-        require(dusdc != address(_asset), "dusdc");
+        require(d != address(_asset), "d");
         balance = _asset.balanceOf(address(this));
         _asset.safeTransfer(controller, balance);
     }
@@ -131,9 +132,9 @@ contract StrategyDForceUSDC {
 
     function _withdrawAll() internal {
         dRewards(pool).exit();
-        uint _dusdc = IERC20(dusdc).balanceOf(address(this));
-        if (_dusdc > 0) {
-            dERC20(dusdc).redeem(address(this),_dusdc);
+        uint _d = IERC20(d).balanceOf(address(this));
+        if (_d > 0) {
+            dERC20(d).redeem(address(this),_d);
         }
     }
 
@@ -161,13 +162,13 @@ contract StrategyDForceUSDC {
     }
 
     function _withdrawSome(uint256 _amount) internal returns (uint) {
-        uint _dusdc = _amount.mul(1e18).div(dERC20(dusdc).getExchangeRate());
-        uint _before = IERC20(dusdc).balanceOf(address(this));
-        dRewards(pool).withdraw(_dusdc);
-        uint _after = IERC20(dusdc).balanceOf(address(this));
+        uint _d = _amount.mul(1e18).div(dERC20(d).getExchangeRate());
+        uint _before = IERC20(d).balanceOf(address(this));
+        dRewards(pool).withdraw(_d);
+        uint _after = IERC20(d).balanceOf(address(this));
         uint _withdrew = _after.sub(_before);
         _before = IERC20(want).balanceOf(address(this));
-        dERC20(dusdc).redeem(address(this), _withdrew);
+        dERC20(d).redeem(address(this), _withdrew);
         _after = IERC20(want).balanceOf(address(this));
         _withdrew = _after.sub(_before);
         return _withdrew;
@@ -178,20 +179,20 @@ contract StrategyDForceUSDC {
     }
 
     function balanceOfPool() public view returns (uint) {
-        return (dRewards(pool).balanceOf(address(this))).mul(dERC20(dusdc).getExchangeRate()).div(1e18);
+        return (dRewards(pool).balanceOf(address(this))).mul(dERC20(d).getExchangeRate()).div(1e18);
     }
 
     function getExchangeRate() public view returns (uint) {
-        return dERC20(dusdc).getExchangeRate();
+        return dERC20(d).getExchangeRate();
     }
 
-    function balanceOfDUSDC() public view returns (uint) {
-        return dERC20(dusdc).getTokenBalance(address(this));
+    function balanceOfD() public view returns (uint) {
+        return dERC20(d).getTokenBalance(address(this));
     }
 
     function balanceOf() public view returns (uint) {
         return balanceOfWant()
-               .add(balanceOfDUSDC())
+               .add(balanceOfD())
                .add(balanceOfPool());
     }
 

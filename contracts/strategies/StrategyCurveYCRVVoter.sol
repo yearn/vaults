@@ -2,11 +2,12 @@
 
 pragma solidity ^0.6.2;
 
-import "../interfaces/Controller.sol";
-import "../interfaces/yVault.sol";
-import "../interfaces/Curve.sol";
-import "../interfaces/Gauge.sol";
-import "../interfaces/Uniswap.sol";
+import "../Controller.sol";
+import { Vault } from "../Vault.sol";
+
+import "../../interfaces/Curve.sol";
+import "../../interfaces/Gauge.sol";
+import "../../interfaces/Uniswap.sol";
 
 interface IERC20 {
     function totalSupply() external view returns (uint256);

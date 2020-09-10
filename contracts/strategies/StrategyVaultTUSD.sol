@@ -6,9 +6,10 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-import "../interfaces/Controller.sol";
-import "../interfaces/Vault.sol";
-import "../interfaces/Aave.sol";
+import "../Controller.sol";
+import "../Vault.sol";
+
+import "../../interfaces/Aave.sol";
 
 /*
 

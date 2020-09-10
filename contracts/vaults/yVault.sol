@@ -8,7 +8,8 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/GSN/Context.sol";
 
-import "../interfaces/Controller.sol";
+import "../Controller.sol";
+import "../Vault.sol";
 
 contract yVault is ERC20 {
     using SafeERC20 for IERC20;
