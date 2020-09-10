@@ -33,10 +33,16 @@ jobs:
     steps:
     - name: Check ETHERSCAN_TOKEN
       run: |
-        [ -z "$ETHERSCAN_TOKEN" ] && echo "Missing ENV variable ETHERSCAN_TOKEN"
+        if [ -z "$ETHERSCAN_TOKEN" ] ; then
+          echo "Missing ENV variable ETHERSCAN_TOKEN"
+          exit 1
+        fi
     - name: Check WEB3_INFURA_PROJECT_ID
       run: |
-        [ -z "$WEB3_INFURA_PROJECT_ID" ] && echo "Missing ENV variable WEB3_INFURA_PROJECT_ID"
+        if [ -z "$WEB3_INFURA_PROJECT_ID" ] ; then
+          echo "Missing ENV variable WEB3_INFURA_PROJECT_ID"
+          exit 1
+        fi
 
     - uses: actions/checkout@v1
 
