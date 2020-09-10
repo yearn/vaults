@@ -1,10 +1,6 @@
 name: Test
 
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+on: [push]
 
 env:
   ETHERSCAN_TOKEN:  ${{ secrets.ETHERSCAN_TOKEN }}
@@ -31,6 +27,18 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+    - name: Check ETHERSCAN_TOKEN
+      run: |
+        if [ -z "$ETHERSCAN_TOKEN" ] ; then
+          echo "Missing ENV variable ETHERSCAN_TOKEN"
+          exit 1
+        fi
+    - name: Check WEB3_INFURA_PROJECT_ID
+      run: |
+        if [ -z "$WEB3_INFURA_PROJECT_ID" ] ; then
+          echo "Missing ENV variable WEB3_INFURA_PROJECT_ID"
+          exit 1
+        fi
     - uses: actions/checkout@v1
 
     - name: Setup Node.js
@@ -48,4 +56,4 @@ jobs:
       run: pip install eth-brownie
 
     - name: Run Tests
-      run: brownie test
+      run: brownie test -s

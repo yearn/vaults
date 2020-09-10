@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.2;
 
-interface Strategy {
+interface IStrategy {
     function want() external view returns (address);
     function deposit() external;
     function withdraw(address) external;

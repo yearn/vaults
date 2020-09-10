@@ -6,9 +6,10 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-import "../interfaces/Controller.sol";
-import "../interfaces/DForce.sol";
-import "../interfaces/Uniswap.sol";
+import "../IController.sol";
+
+import "../../interfaces/DForce.sol";
+import "../../interfaces/Uniswap.sol";
 
 /*
 
@@ -109,8 +110,8 @@ contract StrategyDForceUSDT {
         uint _fee = _amount.mul(withdrawalFee).div(withdrawalMax);
 
 
-        IERC20(want).safeTransfer(Controller(controller).rewards(), _fee);
-        address _vault = Controller(controller).vaults(address(want));
+        IERC20(want).safeTransfer(IController(controller).rewards(), _fee);
+        address _vault = IController(controller).vaults(address(want));
         require(_vault != address(0), "!vault"); // additional protection so we don't burn the funds
 
         IERC20(want).safeTransfer(_vault, _amount.sub(_fee));
@@ -124,7 +125,7 @@ contract StrategyDForceUSDT {
 
         balance = IERC20(want).balanceOf(address(this));
 
-        address _vault = Controller(controller).vaults(address(want));
+        address _vault = IController(controller).vaults(address(want));
         require(_vault != address(0), "!vault"); // additional protection so we don't burn the funds
         IERC20(want).safeTransfer(_vault, balance);
     }
@@ -155,7 +156,7 @@ contract StrategyDForceUSDT {
         uint _want = IERC20(want).balanceOf(address(this));
         if (_want > 0) {
             uint _fee = _want.mul(performanceFee).div(performanceMax);
-            IERC20(want).safeTransfer(Controller(controller).rewards(), _fee);
+            IERC20(want).safeTransfer(IController(controller).rewards(), _fee);
             deposit();
         }
     }

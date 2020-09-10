@@ -2,13 +2,14 @@
 pragma solidity ^0.6.2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-import "../interfaces/Controller.sol";
-import "../interfaces/MStable.sol";
+import "../IController.sol";
+import "../IVault.sol";
+
+import "../../interfaces/Aave.sol";
 
 /*
 
@@ -24,56 +25,76 @@ import "../interfaces/MStable.sol";
 
 */
 
-contract StrategyMStableSavingsUSDC {
+contract StrategyVaultUSDC {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
 
     address constant public want = address(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
-    address constant public mUSD = address(0xe2f2a5C287993345a840Db3B0845fbC70f5935a5);
-    address constant public mSave = address(0xcf3F73290803Fc04425BEE135a4Caeb2BaB2C2A1);
+    address constant public vault = address(0x597aD1e0c13Bfe8025993D9e79C69E1c0233522e);
+
+    address public constant aave = address(0x24a42fD28C976A61Df5D00D0599C34c4f90748c8);
 
     address public governance;
     address public controller;
-
-    uint public fee = 50;
-    uint constant public max = 10000;
 
     constructor(address _controller) public {
         governance = msg.sender;
         controller = _controller;
     }
 
-    function getName() external pure returns (string memory) {
-        return "StrategyMStableSavingsUSDC";
-    }
-
     function deposit() external {
-        uint _want = IERC20(want).balanceOf(address(this));
-        if (_want > 0) {
-            IERC20(want).safeApprove(address(mUSD), 0);
-            IERC20(want).safeApprove(address(mUSD), _want);
-            MStable(mUSD).mint(want, _want);
-        }
-
-        uint _musd = IERC20(mUSD).balanceOf(address(this));
-        if (_musd > 0) {
-            IERC20(mUSD).safeApprove(address(mSave), 0);
-            IERC20(mUSD).safeApprove(address(mSave), _musd);
-            mSavings(mSave).depositSavings(_musd);
+        uint _balance = IERC20(want).balanceOf(address(this));
+        if (_balance > 0) {
+            IERC20(want).safeApprove(address(vault), 0);
+            IERC20(want).safeApprove(address(vault), _balance);
+            IVault(vault).deposit(_balance);
         }
     }
 
-    function setFee(uint _fee) external {
-        require(msg.sender == governance, "!governance");
-        fee = _fee;
+    function getAave() public view returns (address) {
+        return LendingPoolAddressesProvider(aave).getLendingPool();
+    }
+
+    function getName() external pure returns (string memory) {
+        return "StrategyVaultUSDC";
+    }
+
+    function debt() public view returns (uint) {
+        (,uint currentBorrowBalance,,,,,,,,) = Aave(getAave()).getUserReserveData(want, IController(controller).vaults(address(this)));
+        return currentBorrowBalance;
+    }
+
+    function have() public view returns (uint) {
+        uint _have = balanceOf();
+        return _have;
+    }
+
+    function skimmable() public view returns (uint) {
+        uint _debt = debt();
+        uint _have = have();
+        if (_have > _debt) {
+            return _have.sub(_debt);
+        } else {
+            return 0;
+        }
+    }
+
+    function skim() external {
+        uint _balance = IERC20(want).balanceOf(address(this));
+        uint _amount = skimmable();
+        if (_balance < _amount) {
+            _amount = _withdrawSome(_amount.sub(_balance));
+            _amount = _amount.add(_balance);
+        }
+        IERC20(want).safeTransfer(controller, _amount);
     }
 
     // Controller only function for creating additional rewards from dust
     function withdraw(IERC20 _asset) external returns (uint balance) {
         require(msg.sender == controller, "!controller");
-        require(address(_asset) != address(mUSD), "!musd");
         require(address(_asset) != address(want), "!want");
+        require(address(_asset) != address(vault), "!vault");
         balance = _asset.balanceOf(address(this));
         _asset.safeTransfer(controller, balance);
     }
@@ -86,10 +107,7 @@ contract StrategyMStableSavingsUSDC {
             _amount = _withdrawSome(_amount.sub(_balance));
             _amount = _amount.add(_balance);
         }
-        uint _fee = _amount.mul(fee).div(max);
-        IERC20(want).safeTransfer(Controller(controller).rewards(), _fee);
-
-        address _vault = Controller(controller).vaults(address(want));
+        address _vault = IController(controller).vaults(address(this));
         require(_vault != address(0), "!vault"); // additional protection so we don't burn the funds
         IERC20(want).safeTransfer(_vault, _amount);
     }
@@ -99,56 +117,30 @@ contract StrategyMStableSavingsUSDC {
         require(msg.sender == controller, "!controller");
         _withdrawAll();
         balance = IERC20(want).balanceOf(address(this));
-        address _vault = Controller(controller).vaults(address(want));
+        address _vault = IController(controller).vaults(address(this));
         require(_vault != address(0), "!vault"); // additional protection so we don't burn the funds
         IERC20(want).safeTransfer(_vault, balance);
     }
 
-    function normalize(uint _amount) public view returns (uint) {
-        return _amount.mul(uint(10)**ERC20(want).decimals()).div(uint(10)**ERC20(mUSD).decimals());
-    }
-
     function _withdrawAll() internal {
-        mSavings(mSave).redeem(mSavings(mSave).creditBalances(address(this)));
-        MStable(mUSD).redeem(want, normalize(IERC20(mUSD).balanceOf(address(this))));
+        IVault(vault).withdraw(IERC20(vault).balanceOf(address(this)));
     }
 
     function _withdrawSome(uint256 _amount) internal returns (uint) {
-        uint256 b = balanceSavings();
-        uint256 bT = balanceSavingsInToken();
-        require(bT >= _amount, "insufficient funds");
-        // can have unintentional rounding errors
-        uint256 amount = (b.mul(_amount.mul(1e12))).div(bT).add(1);
-        uint _before = IERC20(mUSD).balanceOf(address(this));
-        _withdrawSavings(amount);
-        uint _after = IERC20(mUSD).balanceOf(address(this));
-        uint _wBefore = IERC20(want).balanceOf(address(this));
-        MStable(mUSD).redeem(want, normalize(_after.sub(_before)));
-        uint _wAfter = IERC20(want).balanceOf(address(this));
-        return _wAfter.sub(_wBefore);
+        uint _redeem = IERC20(vault).balanceOf(address(this)).mul(_amount).div(balanceSavingsInToken());
+        uint _before = IERC20(want).balanceOf(address(this));
+        IVault(vault).withdraw(_redeem);
+        uint _after = IERC20(want).balanceOf(address(this));
+        return _after.sub(_before);
     }
 
     function balanceOf() public view returns (uint) {
         return IERC20(want).balanceOf(address(this))
-                .add(normalize(IERC20(mUSD).balanceOf(address(this))))
-                .add(normalize(balanceSavingsInToken()));
-    }
-
-    function _withdrawSavings(uint amount) internal {
-        mSavings(mSave).redeem(amount);
+                .add(balanceSavingsInToken());
     }
 
     function balanceSavingsInToken() public view returns (uint256) {
-        // Mantisa 1e18 to decimals
-        uint256 b = balanceSavings();
-        if (b > 0) {
-            b = b.mul(mSavings(mSave).exchangeRate()).div(1e18);
-        }
-        return b;
-    }
-
-    function balanceSavings() public view returns (uint256) {
-        return mSavings(mSave).creditBalances(address(this));
+        return IERC20(vault).balanceOf(address(this)).mul(IVault(vault).getPricePerFullShare()).div(1e18);
     }
 
     function setGovernance(address _governance) external {

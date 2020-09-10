@@ -6,9 +6,10 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-import "../interfaces/Strategy.sol";
-import "../interfaces/Converter.sol";
-import "../interfaces/OneSplitAudit.sol";
+import "../IStrategy.sol";
+
+import "../../interfaces/Converter.sol";
+import "../../interfaces/OneSplitAudit.sol";
 
 contract StrategyControllerV1 {
     using SafeERC20 for IERC20;
@@ -88,14 +89,14 @@ contract StrategyControllerV1 {
 
         address _current = strategies[_token];
         if (_current != address(0)) {
-           Strategy(_current).withdrawAll();
+           IStrategy(_current).withdrawAll();
         }
         strategies[_token] = _strategy;
     }
 
     function earn(address _token, uint _amount) public {
         address _strategy = strategies[_token];
-        address _want = Strategy(_strategy).want();
+        address _want = IStrategy(_strategy).want();
         if (_want != _token) {
             address converter = converters[_token][_want];
             IERC20(_token).safeTransfer(converter, _amount);
@@ -104,16 +105,16 @@ contract StrategyControllerV1 {
         } else {
             IERC20(_token).safeTransfer(_strategy, _amount);
         }
-        Strategy(_strategy).deposit();
+        IStrategy(_strategy).deposit();
     }
 
     function balanceOf(address _token) external view returns (uint) {
-        return Strategy(strategies[_token]).balanceOf();
+        return IStrategy(strategies[_token]).balanceOf();
     }
 
     function withdrawAll(address _token) public {
         require(msg.sender == strategist || msg.sender == governance, "!strategist");
-        Strategy(strategies[_token]).withdrawAll();
+        IStrategy(strategies[_token]).withdrawAll();
     }
 
     function inCaseTokensGetStuck(address _token, uint _amount) public {
@@ -123,12 +124,12 @@ contract StrategyControllerV1 {
 
     function inCaseStrategyTokenGetStuck(address _strategy, address _token) public {
         require(msg.sender == strategist || msg.sender == governance, "!governance");
-        Strategy(_strategy).withdraw(_token);
+        IStrategy(_strategy).withdraw(_token);
     }
 
     function getExpectedReturn(address _strategy, address _token, uint parts) public view returns (uint expected) {
         uint _balance = IERC20(_token).balanceOf(_strategy);
-        address _want = Strategy(_strategy).want();
+        address _want = IStrategy(_strategy).want();
         (expected,) = OneSplitAudit(onesplit).getExpectedReturn(_token, _want, _balance, parts, 0);
     }
 
@@ -137,11 +138,11 @@ contract StrategyControllerV1 {
         require(msg.sender == strategist || msg.sender == governance, "!governance");
         // This contract should never have value in it, but just incase since this is a public call
         uint _before = IERC20(_token).balanceOf(address(this));
-        Strategy(_strategy).withdraw(_token);
+        IStrategy(_strategy).withdraw(_token);
         uint _after =  IERC20(_token).balanceOf(address(this));
         if (_after > _before) {
             uint _amount = _after.sub(_before);
-            address _want = Strategy(_strategy).want();
+            address _want = IStrategy(_strategy).want();
             uint[] memory _distribution;
             uint _expected;
             _before = IERC20(_want).balanceOf(address(this));
@@ -161,6 +162,6 @@ contract StrategyControllerV1 {
 
     function withdraw(address _token, uint _amount) public {
         require(msg.sender == vaults[_token], "!vault");
-        Strategy(strategies[_token]).withdraw(_amount);
+        IStrategy(strategies[_token]).withdraw(_amount);
     }
 }

@@ -6,11 +6,10 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-import "../interfaces/Controller.sol";
-import "../interfaces/yVault.sol";
-import "../interfaces/Curve.sol";
-import "../interfaces/Gauge.sol";
-import "../interfaces/Uniswap.sol";
+import "../IController.sol";
+
+import "../../interfaces/DForce.sol";
+import "../../interfaces/Uniswap.sol";
 
 /*
 
@@ -26,21 +25,17 @@ import "../interfaces/Uniswap.sol";
 
 */
 
-contract StrategyCurveYCRV {
+contract StrategyDForceUSDC {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
 
-    address constant public want = address(0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8);
-    address constant public pool = address(0xFA712EE4788C042e2B7BB55E6cb8ec569C4530c1);
-    address constant public mintr = address(0xd061D61a4d941c39E5453435B6345Dc261C2fcE0);
-    address constant public crv = address(0xD533a949740bb3306d119CC777fa900bA034cd52);
+    address constant public want = address(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48); // USDC
+    address constant public dusdc = address(0x16c9cF62d8daC4a38FB50Ae5fa5d51E9170F3179);
+    address constant public pool = address(0xB71dEFDd6240c45746EC58314a01dd6D833fD3b5);
+    address constant public df = address(0x431ad2ff6a9C365805eBaD47Ee021148d6f7DBe0);
     address constant public uni = address(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
-    address constant public weth = address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // used for crv <> weth <> dai route
-
-    address constant public dai = address(0x6B175474E89094C44Da98b954EedeAC495271d0F);
-    address constant public ydai = address(0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01);
-    address constant public curve = address(0x45F783CCE6B7FF23B2ab2D70e416cdb7D6055f51);
+    address constant public weth = address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // used for df <> weth <> usdc route
 
     uint public performanceFee = 500;
     uint constant public performanceMax = 10000;
@@ -59,7 +54,7 @@ contract StrategyCurveYCRV {
     }
 
     function getName() external pure returns (string memory) {
-        return "StrategyCurveYCRV";
+        return "StrategyDForceUSDC";
     }
 
     function setStrategist(address _strategist) external {
@@ -80,9 +75,16 @@ contract StrategyCurveYCRV {
     function deposit() public {
         uint _want = IERC20(want).balanceOf(address(this));
         if (_want > 0) {
-            IERC20(want).safeApprove(pool, 0);
-            IERC20(want).safeApprove(pool, _want);
-            Gauge(pool).deposit(_want);
+            IERC20(want).safeApprove(dusdc, 0);
+            IERC20(want).safeApprove(dusdc, _want);
+            dERC20(dusdc).mint(address(this), _want);
+        }
+
+        uint _dusdc = IERC20(dusdc).balanceOf(address(this));
+        if (_dusdc > 0) {
+            IERC20(dusdc).safeApprove(pool, 0);
+            IERC20(dusdc).safeApprove(pool, _dusdc);
+            dRewards(pool).stake(_dusdc);
         }
 
     }
@@ -91,9 +93,7 @@ contract StrategyCurveYCRV {
     function withdraw(IERC20 _asset) external returns (uint balance) {
         require(msg.sender == controller, "!controller");
         require(want != address(_asset), "want");
-        require(crv != address(_asset), "crv");
-        require(ydai != address(_asset), "ydai");
-        require(dai != address(_asset), "dai");
+        require(dusdc != address(_asset), "dusdc");
         balance = _asset.balanceOf(address(this));
         _asset.safeTransfer(controller, balance);
     }
@@ -109,8 +109,9 @@ contract StrategyCurveYCRV {
 
         uint _fee = _amount.mul(withdrawalFee).div(withdrawalMax);
 
-        IERC20(want).safeTransfer(Controller(controller).rewards(), _fee);
-        address _vault = Controller(controller).vaults(address(want));
+
+        IERC20(want).safeTransfer(IController(controller).rewards(), _fee);
+        address _vault = IController(controller).vaults(address(want));
         require(_vault != address(0), "!vault"); // additional protection so we don't burn the funds
 
         IERC20(want).safeTransfer(_vault, _amount.sub(_fee));
@@ -124,53 +125,53 @@ contract StrategyCurveYCRV {
 
         balance = IERC20(want).balanceOf(address(this));
 
-        address _vault = Controller(controller).vaults(address(want));
+        address _vault = IController(controller).vaults(address(want));
         require(_vault != address(0), "!vault"); // additional protection so we don't burn the funds
         IERC20(want).safeTransfer(_vault, balance);
     }
 
     function _withdrawAll() internal {
-        Gauge(pool).withdraw(Gauge(pool).balanceOf(address(this)));
+        dRewards(pool).exit();
+        uint _dusdc = IERC20(dusdc).balanceOf(address(this));
+        if (_dusdc > 0) {
+            dERC20(dusdc).redeem(address(this),_dusdc);
+        }
     }
 
     function harvest() public {
         require(msg.sender == strategist || msg.sender == governance, "!authorized");
-        Mintr(mintr).mint(pool);
-        uint _crv = IERC20(crv).balanceOf(address(this));
-        if (_crv > 0) {
-            IERC20(crv).safeApprove(uni, 0);
-            IERC20(crv).safeApprove(uni, _crv);
+        dRewards(pool).getReward();
+        uint _df = IERC20(df).balanceOf(address(this));
+        if (_df > 0) {
+            IERC20(df).safeApprove(uni, 0);
+            IERC20(df).safeApprove(uni, _df);
 
             address[] memory path = new address[](3);
-            path[0] = crv;
+            path[0] = df;
             path[1] = weth;
-            path[2] = dai;
+            path[2] = want;
 
-            Uni(uni).swapExactTokensForTokens(_crv, uint(0), path, address(this), now.add(1800));
-        }
-        uint _dai = IERC20(dai).balanceOf(address(this));
-        if (_dai > 0) {
-            IERC20(dai).safeApprove(ydai, 0);
-            IERC20(dai).safeApprove(ydai, _dai);
-            yERC20(ydai).deposit(_dai);
-        }
-        uint _ydai = IERC20(ydai).balanceOf(address(this));
-        if (_ydai > 0) {
-            IERC20(ydai).safeApprove(curve, 0);
-            IERC20(ydai).safeApprove(curve, _ydai);
-            ICurveFi(curve).add_liquidity([_ydai,0,0,0],0);
+            Uni(uni).swapExactTokensForTokens(_df, uint(0), path, address(this), now.add(1800));
         }
         uint _want = IERC20(want).balanceOf(address(this));
         if (_want > 0) {
             uint _fee = _want.mul(performanceFee).div(performanceMax);
-            IERC20(want).safeTransfer(Controller(controller).rewards(), _fee);
+            IERC20(want).safeTransfer(IController(controller).rewards(), _fee);
             deposit();
         }
     }
 
     function _withdrawSome(uint256 _amount) internal returns (uint) {
-        Gauge(pool).withdraw(_amount);
-        return _amount;
+        uint _dusdc = _amount.mul(1e18).div(dERC20(dusdc).getExchangeRate());
+        uint _before = IERC20(dusdc).balanceOf(address(this));
+        dRewards(pool).withdraw(_dusdc);
+        uint _after = IERC20(dusdc).balanceOf(address(this));
+        uint _withdrew = _after.sub(_before);
+        _before = IERC20(want).balanceOf(address(this));
+        dERC20(dusdc).redeem(address(this), _withdrew);
+        _after = IERC20(want).balanceOf(address(this));
+        _withdrew = _after.sub(_before);
+        return _withdrew;
     }
 
     function balanceOfWant() public view returns (uint) {
@@ -178,11 +179,20 @@ contract StrategyCurveYCRV {
     }
 
     function balanceOfPool() public view returns (uint) {
-        return Gauge(pool).balanceOf(address(this));
+        return (dRewards(pool).balanceOf(address(this))).mul(dERC20(dusdc).getExchangeRate()).div(1e18);
+    }
+
+    function getExchangeRate() public view returns (uint) {
+        return dERC20(dusdc).getExchangeRate();
+    }
+
+    function balanceOfDUSDC() public view returns (uint) {
+        return dERC20(dusdc).getTokenBalance(address(this));
     }
 
     function balanceOf() public view returns (uint) {
         return balanceOfWant()
+               .add(balanceOfDUSDC())
                .add(balanceOfPool());
     }
 
