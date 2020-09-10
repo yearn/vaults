@@ -2,6 +2,12 @@
 
 pragma solidity ^0.6.2;
 
+import "../interfaces/Controller.sol";
+import "../interfaces/yVault.sol";
+import "../interfaces/Curve.sol";
+import "../interfaces/Gauge.sol";
+import "../interfaces/Uniswap.sol";
+
 interface IERC20 {
     function totalSupply() external view returns (uint256);
     function balanceOf(address account) external view returns (uint256);
@@ -111,11 +117,6 @@ library SafeERC20 {
     }
 }
 
-interface Controller {
-    function vaults(address) external view returns (address);
-    function rewards() external view returns (address);
-}
-
 /*
 
  A strategy must implement the following calls;
@@ -129,45 +130,6 @@ interface Controller {
  Where possible, strategies must remain as immutable as possible, instead of updating variables, we update the contract by linking it in the controller
 
 */
-
-interface Gauge {
-    function deposit(uint) external;
-    function balanceOf(address) external view returns (uint);
-    function withdraw(uint) external;
-}
-
-interface Mintr {
-    function mint(address) external;
-}
-
-interface Uni {
-    function swapExactTokensForTokens(uint, uint, address[] calldata, address, uint) external;
-}
-
-interface yERC20 {
-  function deposit(uint256 _amount) external;
-  function withdraw(uint256 _amount) external;
-}
-
-interface ICurveFi {
-
-  function get_virtual_price() external view returns (uint);
-  function add_liquidity(
-    uint256[4] calldata amounts,
-    uint256 min_mint_amount
-  ) external;
-  function remove_liquidity_imbalance(
-    uint256[4] calldata amounts,
-    uint256 max_burn_amount
-  ) external;
-  function remove_liquidity(
-    uint256 _amount,
-    uint256[4] calldata amounts
-  ) external;
-  function exchange(
-    int128 from, int128 to, uint256 _from_amount, uint256 _min_to_amount
-  ) external;
-}
 
 contract StrategyCurveYCRVVoter {
     using SafeERC20 for IERC20;
