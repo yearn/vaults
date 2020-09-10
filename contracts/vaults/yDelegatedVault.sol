@@ -8,8 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/GSN/Context.sol";
 
-import "../Controller.sol";
-import "../Vault.sol";
+import "../IController.sol";
 
 import "../../interfaces/Aave.sol";
 
@@ -41,13 +40,13 @@ contract yDelegatedVault is ERC20 {
     }
 
     function debt() public view returns (uint) {
-        address _reserve = Controller(controller).want(address(this));
+        address _reserve = IController(controller).want(address(this));
         (,uint currentBorrowBalance,,,,,,,,) = Aave(getAave()).getUserReserveData(_reserve, address(this));
         return currentBorrowBalance;
     }
 
     function credit() public view returns (uint) {
-        return Controller(controller).balanceOf(address(this));
+        return IController(controller).balanceOf(address(this));
     }
 
     // % of tokens locked and cannot be withdrawn per user
@@ -159,7 +158,7 @@ contract yDelegatedVault is ERC20 {
                 _over = credit();
             }
             if (_over > 0) {
-                Controller(controller).withdraw(address(this), _over);
+                IController(controller).withdraw(address(this), _over);
                 repayAll();
             }
         }
@@ -223,7 +222,7 @@ contract yDelegatedVault is ERC20 {
         uint _balance = IERC20(_reserve).balanceOf(address(this));
         if (_balance > 0) {
             IERC20(_reserve).safeTransfer(controller, _balance);
-            Controller(controller).earn(address(this), _balance);
+            IController(controller).earn(address(this), _balance);
         }
     }
 
@@ -254,7 +253,7 @@ contract yDelegatedVault is ERC20 {
     }
 
     function reserve() public view returns (address) {
-        return Controller(controller).want(address(this));
+        return IController(controller).want(address(this));
     }
 
     function underlying() public view returns (address) {

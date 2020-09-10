@@ -6,8 +6,8 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-import "../Controller.sol";
-import "../Vault.sol";
+import "../IController.sol";
+import "../IVault.sol";
 
 import "../../interfaces/Curve.sol";
 import "../../interfaces/Gauge.sol";
@@ -110,8 +110,8 @@ contract StrategyCurveYCRV {
 
         uint _fee = _amount.mul(withdrawalFee).div(withdrawalMax);
 
-        IERC20(want).safeTransfer(Controller(controller).rewards(), _fee);
-        address _vault = Controller(controller).vaults(address(want));
+        IERC20(want).safeTransfer(IController(controller).rewards(), _fee);
+        address _vault = IController(controller).vaults(address(want));
         require(_vault != address(0), "!vault"); // additional protection so we don't burn the funds
 
         IERC20(want).safeTransfer(_vault, _amount.sub(_fee));
@@ -125,7 +125,7 @@ contract StrategyCurveYCRV {
 
         balance = IERC20(want).balanceOf(address(this));
 
-        address _vault = Controller(controller).vaults(address(want));
+        address _vault = IController(controller).vaults(address(want));
         require(_vault != address(0), "!vault"); // additional protection so we don't burn the funds
         IERC20(want).safeTransfer(_vault, balance);
     }
@@ -153,7 +153,7 @@ contract StrategyCurveYCRV {
         if (_dai > 0) {
             IERC20(dai).safeApprove(ydai, 0);
             IERC20(dai).safeApprove(ydai, _dai);
-            Vault(ydai).deposit(_dai);
+            IVault(ydai).deposit(_dai);
         }
         uint _ydai = IERC20(ydai).balanceOf(address(this));
         if (_ydai > 0) {
@@ -164,7 +164,7 @@ contract StrategyCurveYCRV {
         uint _want = IERC20(want).balanceOf(address(this));
         if (_want > 0) {
             uint _fee = _want.mul(performanceFee).div(performanceMax);
-            IERC20(want).safeTransfer(Controller(controller).rewards(), _fee);
+            IERC20(want).safeTransfer(IController(controller).rewards(), _fee);
             deposit();
         }
     }

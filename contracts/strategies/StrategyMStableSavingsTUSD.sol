@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-import "../Controller.sol";
+import "../IController.sol";
 
 import "../../interfaces/MStable.sol";
 
@@ -79,7 +79,7 @@ contract StrategyMStableSavingsTUSD {
             _amount = _amount.add(_balance);
         }
         if (_amount > 0) {
-            address _vault = Controller(controller).vaults(address(want));
+            address _vault = IController(controller).vaults(address(want));
             require(_vault != address(0), "!vault"); // additional protection so we don't burn the funds
             IERC20(want).safeTransfer(_vault, _amount);
         }
@@ -92,7 +92,7 @@ contract StrategyMStableSavingsTUSD {
         _withdrawAll();
         balance = IERC20(want).balanceOf(address(this));
         if (balance > 0) {
-            address _vault = Controller(controller).vaults(address(want));
+            address _vault = IController(controller).vaults(address(want));
             require(_vault != address(0), "!vault"); // additional protection so we don't burn the funds
             IERC20(want).safeTransfer(_vault, balance);
         }
