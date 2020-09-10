@@ -3,7 +3,7 @@ pragma solidity ^0.6.2;
 
 interface Vault {
     function token() external view returns (address);
-    function claimInsurance() external;
+    function claimInsurance() external; // NOTE: Only yDelegatedVault implements this
     function getPricePerFullShare() external view returns (uint);
     function deposit(uint) external;
     function withdraw(uint) external;
