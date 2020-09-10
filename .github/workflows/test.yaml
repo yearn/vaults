@@ -56,4 +56,4 @@ jobs:
       run: pip install eth-brownie
 
     - name: Run Tests
-      run: brownie test
+      run: brownie test -s
