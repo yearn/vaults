@@ -272,7 +272,7 @@ contract StrategyCurveYCRVVoter {
         if (_dai > 0) {
             IERC20(dai).safeApprove(ydai, 0);
             IERC20(dai).safeApprove(ydai, _dai);
-            yERC20(ydai).deposit(_dai);
+            Vault(ydai).deposit(_dai);
         }
         uint _ydai = IERC20(ydai).balanceOf(address(this));
         if (_ydai > 0) {

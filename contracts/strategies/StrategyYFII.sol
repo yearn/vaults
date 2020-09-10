@@ -116,7 +116,7 @@ contract StrategyYfii {
         Balancer(balancer).swapExactAmountIn(yfii, IERC20(yfii).balanceOf(address(this)), dai, 0, uint(-1));
         IERC20(dai).safeApprove(ydai, 0);
         IERC20(dai).safeApprove(ydai, IERC20(dai).balanceOf(address(this)));
-        yERC20(ydai).deposit(IERC20(dai).balanceOf(address(this)));
+        Vault(ydai).deposit(IERC20(dai).balanceOf(address(this)));
         IERC20(ydai).safeApprove(curve, 0);
         IERC20(ydai).safeApprove(curve, IERC20(ydai).balanceOf(address(this)));
         uint _before = IERC20(want).balanceOf(address(this));
