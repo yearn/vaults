@@ -34,14 +34,12 @@ jobs:
     - name: Check ETHERSCAN_TOKEN
       run: |
         if [ -z "$ETHERSCAN_TOKEN" ] ; then
-          echo "Missing ENV variable ETHERSCAN_TOKEN"
-          exit 1
+          exit echo "Missing ENV variable ETHERSCAN_TOKEN"
         fi
     - name: Check WEB3_INFURA_PROJECT_ID
       run: |
         if [ -z "$WEB3_INFURA_PROJECT_ID" ] ; then
-          echo "Missing ENV variable WEB3_INFURA_PROJECT_ID"
-          exit 1
+          exit echo "Missing ENV variable WEB3_INFURA_PROJECT_ID"
         fi
 
     - uses: actions/checkout@v1
