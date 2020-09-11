@@ -19,7 +19,7 @@ jobs:
         python-version: 3.8
 
     - name: Install black
-      run: pip install black
+      run: pip install -r requirements.txt
 
     - name: Run Black
       run: black .
@@ -61,7 +61,7 @@ jobs:
         python-version: 3.8
 
     - name: Install Brownie
-      run: pip install eth-brownie
+      run: pip install -r requirements.txt
 
     - name: Run Tests
       run: brownie test -s
