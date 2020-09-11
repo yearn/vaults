@@ -41,6 +41,14 @@ jobs:
         fi
     - uses: actions/checkout@v1
 
+    - name: Cache Compiler Installations
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.solcx
+          ~/.vvm
+        key: compiler-cache
+
     - name: Setup Node.js
       uses: actions/setup-node@v1
 
